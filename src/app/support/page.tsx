@@ -10,6 +10,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import Swal from "sweetalert2";
 import { io, Socket } from 'socket.io-client';
 import api from "@/lib/axios";
+import { getFaqs, Faq } from "@/lib/api/faqApi";
 
 export interface SupportReply {
   _id?: string;
@@ -44,18 +45,13 @@ export const createSupportTicket = async (data: Partial<SupportTicket>) => {
   return response.data.data;
 };
 
-const faqs = [
-  { question: "What should I do if a customer is unreachable?", answer: "Wait for 5 minutes at the location, try calling twice. If still unreachable, update the ticket status or call support." },
-  { question: "How are my earnings calculated?", answer: "Earnings are calculated per delivery based on distance, order value, and any applicable daily incentives." },
-  { question: "What if I meet with an accident?", answer: "Please call our 24x7 priority hotline immediately. We will arrange a backup rider and assist you." },
-  { question: "Can I cancel an assigned order?", answer: "Orders can only be cancelled in emergency situations. Please contact support via call or ticket." },
-  { question: "When will I get my payout?", answer: "You can request a payout from the Earnings tab once your wallet has a withdrawable balance." }
-];
 
 export default function SupportPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  const [faqs, setFaqs] = useState<Faq[]>([]);
+  const [faqsLoading, setFaqsLoading] = useState(true);
 
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [totalTicketsCount, setTotalTicketsCount] = useState(0);
@@ -135,6 +131,10 @@ export default function SupportPage() {
 
   useEffect(() => {
     fetchTickets(1, false);
+  }, []);
+
+  useEffect(() => {
+    getFaqs().then((data) => { setFaqs(data); setFaqsLoading(false); });
   }, []);
 
   const fetchTickets = async (pageNum: number = 1, isLoadMore: boolean = false) => {
@@ -467,16 +467,25 @@ export default function SupportPage() {
                 <h2 className="text-base md:text-xl font-medium text-gray-900">Frequently Asked Questions</h2>
               </div>
 
-              {filteredFaqs.length === 0 ? (
+              {faqsLoading ? (
+                <div className="space-y-2">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="h-12 bg-gray-100 rounded-xl animate-pulse" />
+                  ))}
+                </div>
+              ) : filteredFaqs.length === 0 ? (
                 <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                  <p className="text-xs md:text-sm text-gray-500 font-medium">No answers found for "{searchQuery}".<br />Please try a different keyword.</p>
+                  <p className="text-xs md:text-sm text-gray-500 font-medium">
+                    {searchQuery ? `No answers found for "${searchQuery}".` : "No FAQs available yet."}<br />
+                    {searchQuery && "Please try a different keyword."}
+                  </p>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-100">
                   {filteredFaqs.map((faq, index) => {
                     const isOpen = openFaqIndex === index;
                     return (
-                      <div key={index} className={`transition-all duration-300 ${isOpen ? 'bg-[#1E4E70]/5 rounded-xl md:rounded-2xl' : 'hover:bg-gray-50 rounded-xl md:rounded-2xl'}`}>
+                      <div key={faq._id} className={`transition-all duration-300 ${isOpen ? 'bg-[#1E4E70]/5 rounded-xl md:rounded-2xl' : 'hover:bg-gray-50 rounded-xl md:rounded-2xl'}`}>
                         <button onClick={() => toggleFaq(index)} className="w-full flex items-center justify-between p-3.5 md:p-5 text-left cursor-pointer focus:outline-none">
                           <span className={`font-medium text-[13px] md:text-[15px] pr-3 md:pr-4 ${isOpen ? 'text-[#1E4E70]' : 'text-gray-800'}`}>
                             {faq.question}
@@ -495,6 +504,7 @@ export default function SupportPage() {
                   })}
                 </div>
               )}
+
             </div>
 
           </div>

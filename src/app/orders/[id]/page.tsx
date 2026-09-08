@@ -233,12 +233,14 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
   }
 
   const orderNumber = `#${order._id.substring(order._id.length - 6).toUpperCase()}`;
-  const parentName = order.parentId?.name || "Customer";
+  const parentName = order.deliveryAddress?.name || order.parentId?.name || "Customer";
   const babyName = order.babyId?.name ? `Baby ${order.babyId.name}` : "Baby";
-  const phone = order.parentId?.phone || "N/A";
+  const phone = order.deliveryAddress?.phone || order.parentId?.phone || "N/A";
   const kitchenAddress = order.kitchenId?.address || "Moncradel Kitchen Hub";
-  const address = order.deliveryAddress?.street ? `${order.deliveryAddress.street}, ${order.deliveryAddress.city}` : "Delivery Address";
-  const city = order.deliveryAddress?.city || "";
+  const address = order.deliveryAddress?.street 
+    ? `${order.deliveryAddress.flat ? `${order.deliveryAddress.flat}, ` : ''}${order.deliveryAddress.street}` 
+    : "Delivery Address";
+  const city = [order.deliveryAddress?.city, order.deliveryAddress?.state, order.deliveryAddress?.zipCode ? `PIN: ${order.deliveryAddress.zipCode}` : null].filter(Boolean).join(', ');
   const distanceKm = order.distanceKm || 2.5;
   const allergies = order.babyId?.allergies || [];
 
@@ -275,10 +277,16 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
       {/* 1. TOP HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <div className="flex items-center gap-3 mb-1.5">
+          <div className="flex items-center gap-3 mb-1.5 flex-wrap">
             <h1 className="text-2xl sm:text-3xl font-medium text-slate-900 tracking-tight">
               Order {orderNumber}
             </h1>
+            {order.status === "cancelled" && (
+              <span className="flex items-center gap-1.5 bg-rose-50 border border-rose-200/60 text-rose-700 text-[12px] sm:text-[13px] font-medium px-3 py-1 rounded-full">
+                <AlertCircle className="w-3.5 h-3.5" />
+                Cancelled {order.cancelledByRole ? `by ${order.cancelledByRole === 'parent' ? 'Customer' : order.cancelledByRole === 'kitchen' ? 'Kitchen' : order.cancelledByRole}` : ''}
+              </span>
+            )}
             {order.status === "out_for_delivery" && (
               <span className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200/60 text-emerald-700 text-[12px] sm:text-[13px] font-medium px-3 py-1 rounded-full">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -426,7 +434,23 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
         {/* sticky top-24 makes it float on scroll, but alignment matches the left column at the top */}
         <div className="bg-white rounded-lg border border-slate-200/80 p-4 sm:p-6 lg:p-8 sticky top-24">
           
-          {order.status === "ready" ? (
+          {order.status === "cancelled" ? (
+            <div className="text-center py-6">
+              <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-rose-100">
+                <AlertCircle className="w-8 h-8" />
+              </div>
+              <h2 className="text-[20px] font-medium text-rose-900">Order Cancelled</h2>
+              <p className="text-[14px] text-rose-700 mt-2">
+                This order was cancelled {order.cancelledByRole ? `by ${order.cancelledByRole === 'parent' ? 'Customer' : order.cancelledByRole === 'kitchen' ? 'Kitchen' : order.cancelledByRole}` : ''}.
+              </p>
+              {order.cancellationReason && (
+                <p className="text-[13px] text-slate-700 mt-3 bg-rose-50/50 p-3 rounded-lg border border-rose-100 text-left">
+                  <span className="font-semibold text-slate-900">Reason: </span>
+                  {order.cancellationReason}
+                </p>
+              )}
+            </div>
+          ) : order.status === "ready" ? (
             <div className="text-center">
               <div className="w-14 h-14 bg-blue-50 text-[#1E4E70] rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-100">
                 <Package className="w-7 h-7" />

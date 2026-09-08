@@ -12,7 +12,7 @@ import { io, Socket } from 'socket.io-client';
 import api from "@/lib/axios";
 import { getFaqs, Faq } from "@/lib/api/faqApi";
 
-export interface SupportReply {
+interface SupportReply {
   _id?: string;
   sender: 'user' | 'admin';
   message: string;
@@ -23,7 +23,7 @@ export interface SupportReply {
   isRead?: boolean;
 }
 
-export interface SupportTicket {
+interface SupportTicket {
   _id?: string;
   userId: string;
   orderId?: string;
@@ -35,12 +35,12 @@ export interface SupportTicket {
   updatedAt?: string;
 }
 
-export const getSupportTickets = async (page: number = 1, limit: number = 10) => {
+const getSupportTickets = async (page: number = 1, limit: number = 10) => {
   const response = await api.get(`/support?page=${page}&limit=${limit}`);
   return { tickets: response.data.data, count: response.data.count };
 };
 
-export const createSupportTicket = async (data: Partial<SupportTicket>) => {
+const createSupportTicket = async (data: Partial<SupportTicket>) => {
   const response = await api.post("/support", data);
   return response.data.data;
 };

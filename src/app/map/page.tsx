@@ -163,10 +163,10 @@ function MapContent() {
     );
   }
 
-  const customerName = order.parentId?.name || "Customer";
-  const customerPhone = order.parentId?.phone || "";
+  const customerName = order.deliveryAddress?.name || order.parentId?.name || "Customer";
+  const customerPhone = order.deliveryAddress?.phone || order.parentId?.phone || "";
   const address = order.deliveryAddress?.street 
-    ? `${order.deliveryAddress.street}, ${order.deliveryAddress.city}`
+    ? `${order.deliveryAddress.flat ? `${order.deliveryAddress.flat}, ` : ''}${order.deliveryAddress.street}${order.deliveryAddress.city ? `, ${order.deliveryAddress.city}` : ''}`
     : "Delivery Address";
 
   return (

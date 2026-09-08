@@ -154,10 +154,10 @@ export default function Dashboard() {
             id: order._id,
             orderNumber: `#${order._id.substring(order._id.length - 6).toUpperCase()}`,
             status: order.status,
-            parentName: order.parentId?.name || "Customer",
+            parentName: order.deliveryAddress?.name || order.parentId?.name || "Customer",
             kitchenAddress: order.kitchenId?.address || "Moncradel Kitchen Hub",
             address: order.deliveryAddress?.street
-              ? `${order.deliveryAddress.street}, ${order.deliveryAddress.city}`
+              ? `${order.deliveryAddress.flat ? `${order.deliveryAddress.flat}, ` : ''}${order.deliveryAddress.street}${order.deliveryAddress.city ? `, ${order.deliveryAddress.city}` : ''}`
               : "Delivery Address",
             distanceKm: order.distanceKm || 2.5,
             itemSummary: order.items?.map((i: any) => i.mealId?.name || i.productId?.name || "Item").join(", ") || "No items",

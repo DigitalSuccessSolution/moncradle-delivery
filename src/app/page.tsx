@@ -24,6 +24,7 @@ import {
 import Swal from "sweetalert2";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store/store";
+import { io as socketIo } from "socket.io-client";
 import { setOnlineStatus } from "@/store/slices/appSlice";
 
 interface DeliveryTask {
@@ -178,6 +179,17 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchDashboardData();
+
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
+    const socket = socketIo(apiUrl);
+
+    socket.on("order_ready", () => {
+      fetchDashboardData();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, [fetchDashboardData]);
 
   const handlePickup = async (id: string, e: React.MouseEvent) => {

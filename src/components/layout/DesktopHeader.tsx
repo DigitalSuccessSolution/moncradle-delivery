@@ -90,14 +90,7 @@ export default function DesktopHeader() {
     <header className="hidden md:flex sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/60 px-6 lg:px-8 py-3.5 transition-all w-full items-center justify-between">
       {/* Left: Global Search or Context */}
       <div className="flex-1 max-w-md">
-        <div className="relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search orders, areas, or customers..."
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-[14px] font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#A5D8FF]/50 transition-all"
-          />
-        </div>
+      
       </div>
 
       {/* Right: Actions & Profile */}
@@ -126,11 +119,12 @@ export default function DesktopHeader() {
         <Link href="/profile" className="flex items-center gap-3 hover:bg-slate-50 p-1.5 rounded-xl transition-colors pr-3">
           <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-100">
             <Image
-              src={avatar}
+              src={avatar || "/delivery_boy_hero.png"}
               alt="Rider Profile"
               width={40}
               height={40}
               className="object-cover w-full h-full"
+              onError={() => setAvatar("/delivery_boy_hero.png")}
             />
           </div>
           <div className="flex flex-col">

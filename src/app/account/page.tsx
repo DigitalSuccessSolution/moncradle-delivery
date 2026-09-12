@@ -121,6 +121,7 @@ export default function AccountPage() {
               width={120} 
               height={120} 
               className="object-cover w-full h-full" 
+              onError={() => setAvatar("")}
             />
           ) : (
             <Image

@@ -130,11 +130,12 @@ export default function MobileHeader() {
           <Link href="/profile" className="relative cursor-pointer block active:scale-95 transition-transform shrink-0">
             <div className="w-[46px] h-[46px] rounded-full overflow-hidden bg-slate-100 border border-slate-200">
               <Image
-                src={avatar}
+                src={avatar || "/delivery_boy_hero.png"}
                 alt="Rider Profile"
                 width={46}
                 height={46}
                 className="object-cover w-full h-full"
+                onError={() => setAvatar("/delivery_boy_hero.png")}
               />
             </div>
             {isOnline && (

@@ -19,6 +19,7 @@ import {
 import Swal from "sweetalert2";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
+import { io as socketIo } from "socket.io-client";
 
 interface DeliveryTask {
   id: string;
@@ -31,6 +32,10 @@ interface DeliveryTask {
   itemSummary: string;
   packCount: number;
   mealImage: string;
+  itemType: string;
+  paymentStatus: string;
+  paymentMethod: string;
+  totalAmount: number;
 }
 
 export default function OrdersPage() {
@@ -79,20 +84,30 @@ export default function OrdersPage() {
       const data = await response.json();
       if (data.success) {
         // Map backend orders to frontend DeliveryTask shape
-        const mappedOrders = data.data.map((order: any) => ({
-          id: order._id,
-          orderNumber: `#${order._id.substring(order._id.length - 6).toUpperCase()}`,
-          status: order.status,
-          parentName: order.deliveryAddress?.name || order.parentId?.name || "Customer",
-          kitchenAddress: order.kitchenId?.address || "Moncradel Kitchen Hub",
-          address: order.deliveryAddress?.street
-            ? `${order.deliveryAddress.flat ? `${order.deliveryAddress.flat}, ` : ''}${order.deliveryAddress.street}${order.deliveryAddress.city ? `, ${order.deliveryAddress.city}` : ''}`
-            : "Delivery Address",
-          distanceKm: order.distanceKm || 2.5,
-          itemSummary: order.items?.map((i: any) => i.mealId?.name || i.productId?.name || "Item").join(", ") || "No items",
-          packCount: order.items?.reduce((acc: number, item: any) => acc + item.quantity, 0) || 0,
-          mealImage: order.items?.[0]?.mealId?.imageUrl || order.items?.[0]?.productId?.imageUrl || ""
-        }));
+        const mappedOrders = data.data.map((order: any) => {
+          const firstItem = order.items?.[0];
+          const itemType = firstItem?.itemType || 'meal';
+          const mealImage = firstItem?.mealId?.imageUrl || firstItem?.mealId?.images?.[0] || firstItem?.productId?.imageUrl || firstItem?.productId?.images?.[0] || "";
+          
+          return {
+            id: order._id,
+            orderNumber: `#${order._id.substring(order._id.length - 6).toUpperCase()}`,
+            status: order.status,
+            parentName: order.deliveryAddress?.name || order.parentId?.name || "Customer",
+            kitchenAddress: order.kitchenId?.address || "Moncradel Kitchen Hub",
+            address: order.deliveryAddress?.street
+              ? `${order.deliveryAddress.flat ? `${order.deliveryAddress.flat}, ` : ''}${order.deliveryAddress.street}${order.deliveryAddress.city ? `, ${order.deliveryAddress.city}` : ''}`
+              : "Delivery Address",
+            distanceKm: order.distanceKm || 2.5,
+            itemSummary: order.items?.map((i: any) => i.mealId?.name || i.productId?.name || "Item").join(", ") || "No items",
+            packCount: order.items?.reduce((acc: number, item: any) => acc + item.quantity, 0) || 0,
+            mealImage,
+            itemType,
+            paymentStatus: order.paymentStatus || 'pending',
+            paymentMethod: order.paymentMethod || 'cod',
+            totalAmount: order.totalAmount || 0
+          };
+        });
         setTasks(mappedOrders);
       }
     } catch (err) {
@@ -104,6 +119,17 @@ export default function OrdersPage() {
 
   useEffect(() => {
     fetchOrders();
+
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
+    const socket = socketIo(apiUrl);
+
+    socket.on("order_ready", () => {
+      fetchOrders();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, [fetchOrders]);
 
   const filteredTasks = tasks.filter((t) => t.status === activeTab);
@@ -256,12 +282,19 @@ export default function OrdersPage() {
               >
                 {/* Header: Order ID & Distance */}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium text-black text-[15px]">
                       {order.orderNumber}
                     </span>
+                    {order.paymentStatus === 'paid' ? (
+                      <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-100">
+                        {order.paymentMethod === 'cod' ? 'Cash Collected' : 'Paid Online'}
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-medium text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-100">Collect Cash: ₹{order.totalAmount}</span>
+                    )}
                   </div>
-                  <span className="text-[12px] sm:text-[13px] font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100">
+                  <span className="text-[12px] sm:text-[13px] font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100 shrink-0">
                     {order.distanceKm} km away
                   </span>
                 </div>
@@ -296,19 +329,19 @@ export default function OrdersPage() {
                       {order.mealImage ? (
                         <img
                           src={order.mealImage}
-                          alt="Meal"
+                          alt={order.itemType === 'product' ? 'Product' : 'Meal'}
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             const target = e.currentTarget;
                             target.style.display = 'none';
                             const emoji = document.createElement('span');
                             emoji.className = 'text-sm';
-                            emoji.textContent = '🥣';
+                            emoji.textContent = order.itemType === 'product' ? '📦' : '🥣';
                             target.parentElement?.appendChild(emoji);
                           }}
                         />
                       ) : (
-                        <span className="text-sm">🥣</span>
+                        <span className="text-sm">{order.itemType === 'product' ? '📦' : '🥣'}</span>
                       )}
                     </div>
                     <p className="text-[13px] sm:text-[14px] font-medium text-black truncate opacity-90">

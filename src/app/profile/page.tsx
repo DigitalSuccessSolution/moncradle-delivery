@@ -11,6 +11,7 @@ import {
 
 export default function ProfilePage() {
   const router = useRouter();
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // --- Profile States ---
@@ -289,7 +290,14 @@ export default function ProfilePage() {
               <div className="relative mt-2 mb-3 lg:mt-4 lg:mb-5">
                 <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white bg-slate-100 relative">
                   {avatar ? (
-                    <Image src={avatar} alt="Profile" width={128} height={128} className="object-cover w-full h-full" />
+                    <Image 
+                      src={avatar} 
+                      alt="Profile" 
+                      width={128} 
+                      height={128} 
+                      className="object-cover w-full h-full" 
+                      onError={() => setAvatar("")}
+                    />
                   ) : (
                     <Image
                       src="/delivery_boy_hero.png"
